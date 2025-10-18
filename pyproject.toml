@@ -52,8 +52,8 @@ carbon-data-path = "./utils/profile/carbon.json"
 #model-name = "Shufflenet_v2_x0_5"
 model-name = "simplecnn"
 # shape
-input-shape = "(3, 32, 32)"
-#input-shape = "(3,224,224)"
+#input-shape = "(3, 32, 32)"
+input-shape = "(3,224,224)"
 # classes
 num-classes = 10 #CRNNResNetAttn: 12 Lstm: - Others: 10
 # model independent
@@ -64,7 +64,7 @@ decay-step = 10
 momentum = 0.9
 
 # device profile
-use-battery = false
+use-battery = true
 prefer-time = "EQUAL" # SLOW, EQUAL, FAST
 prefer-battery = "EQUAL" # LOW, MEDIUM, HIGH, EQUAL
 prefer-carbon = "UNIFORM" # LOW, HIGH, UNIFORM
