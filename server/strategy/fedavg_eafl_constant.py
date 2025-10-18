@@ -73,10 +73,23 @@ class FedAvgEaflConstant(BaseStrategy):
 
         # Cid utility map
         eafl_weights = []
-        for cid in self.available_cids:
-            eafl_weight = self.calc_eafl_weight(cid)
-            self.profiles[cid]['eafl_weight'] = eafl_weight
-            eafl_weights.append((cid, eafl_weight))
+        if server_round == 1 or len(self.client_utils) == 0:
+            for cid in self.available_cids:
+                # Peso baseado apenas na bateria inicial (ou 1.0 se não usar bateria)
+                if self.use_battery:
+                    eafl_weight = (self.profiles[cid]["initial_battery_mJ"] / 
+                                 self.profiles[cid]['max_battery_mJ'])
+                else:
+                    eafl_weight = 1.0
+                    
+                self.profiles[cid]['eafl_weight'] = eafl_weight
+                eafl_weights.append((cid, eafl_weight))
+        else:
+            # A partir do segundo round, usar o cálculo completo
+            for cid in self.available_cids:
+                eafl_weight = self.calc_eafl_weight(cid)
+                self.profiles[cid]['eafl_weight'] = eafl_weight
+                eafl_weights.append((cid, eafl_weight))
 
         # Sample clients
         sample_size, min_num_clients = self.num_fit_clients(
@@ -282,9 +295,21 @@ class FedAvgEaflConstant(BaseStrategy):
         if not (0 <= w <= 1):
             raise ValueError("w deve estar entre 0 e 1")
 
-        max_U = max(self.client_utils)
+        # Proteção contra lista vazia
+        if len(self.client_utils) == 0:
+            max_U = 1.0
+        else:
+            max_U = max(self.client_utils)
+            max_U = max_U if max_U != 0 else 1.0
         
-        max_U = max_U if max_U != 0 else 1
+        # Proteção para utility do cliente
+        client_utility = self.profiles[cid].get('utility', 0.0)
         
-        return (w * (self.profiles[cid]['utility'] / max_U) + (1 - w) *
-                    (self.profiles[cid]["initial_battery_mJ"] / self.profiles[cid]['max_battery_mJ']))
+        # Cálculo do peso EAFL
+        if self.use_battery:
+            battery_ratio = (self.profiles[cid]["initial_battery_mJ"] / 
+                           self.profiles[cid]['max_battery_mJ'])
+            return w * (client_utility / max_U) + (1 - w) * battery_ratio
+        else:
+            # Se não usar bateria, retornar apenas a utilidade normalizada
+            return client_utility / max_U if max_U > 0 else 1.0
