@@ -31,6 +31,7 @@ from server.strategy.fedprox_random_aff import FedProxRandomAFF
 from server.strategy.fedprox_random_constant import FedProxRandomConstant
 from server.strategy.fedprox_random_criticalfl import FedProxRandomCriticalFL
 from server.strategy.fedprox_random_hetaaff import FedProxRandomHETAAFF
+from server.strategy.fedavg_eafl_constant import FedAvgEaflConstant
 from utils.dataset.partition import DatasetFactory
 from utils.model.manipulation import ModelPersistence, get_weights, set_weights, test
 from utils.simulation.config import ConfigRepository
@@ -228,6 +229,8 @@ STRATEGY_REGISTRY = {
     ("feddyn", "random", "criticalfl"): FedDynRandomCriticalFL,
     ("feddyn", "random", "aff"): FedDynRandomAFF,
     ("feddyn", "random", "hetaaff"): FedDynRandomHETAAFF,
+
+    ("fedavg", "eafl", "constant"): FedAvgEaflConstant,
 }
 
 
