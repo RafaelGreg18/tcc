@@ -11,6 +11,7 @@ from server.strategy.fedavg_divfl_aff import FedAvgDivflAFF
 from server.strategy.fedavg_divfl_constant import FedAvgDivflConstant
 from server.strategy.fedavg_divfl_critical import FedAvgDivflCriticalFL
 from server.strategy.fedavg_divfl_hetaaff import FedAvgDivflHETAAFF
+from server.strategy.fedavg_eaflplus_constant import FedAvgEaflPlusConstant
 from server.strategy.fedavg_oort_aff import FedAvgOortAFF
 from server.strategy.fedavg_oort_constant import FedAvgOortConstant
 from server.strategy.fedavg_oort_critical import FedAvgOortCriticalFL
@@ -231,6 +232,8 @@ STRATEGY_REGISTRY = {
     ("feddyn", "random", "hetaaff"): FedDynRandomHETAAFF,
 
     ("fedavg", "eafl", "constant"): FedAvgEaflConstant,
+    ("fedavg", "eaflplus", "constant"): FedAvgEaflPlusConstant,
+
 }
 
 

@@ -1,0 +1,41 @@
+Simular computadores proprios pra cada device OK
+
+setar threshold de energia para delegar treino
+    - self.context.run_config["battery-threshold"] OK
+    - get_selected_cid_communication_energy, get_unselected_cid_communication_energy
+
+
+
+setar condicao de transferencia de treino (se a bateria tiver maior que threshold, treinar no device mesmo
+                                            se nao, passar treinamento para computador proprio) OK
+
+setar gasto de energia nos 2 casos OK
+    se device vai treinar, 2 * Energia_Comunicacao + Energia_Treino
+    se pc vai treinar, 4 * Energia_Comunicacao
+
+################################################
+EAFL
+
+Validar resultados da EAFL
+    - acc, loss
+    - num_depleted por round (subiu de 3 pra 22 de um round pra outro, sendo que tem apenas 10 participantes)
+
+
+################################################
+
+
+################################################
+EAFL PLUS
+- Teria que ter pegada de carbono para comunicacao?
+################################################
+
+
+Simulacoes
+
+- Perguntar quais perfis simular (nivel de energia, threshold, weight(?))
+
+- Se eu nao aloco edge server para um device com baixa energia, entao vai ter dropout inevitavelmente
+  (EAFL PLUS era pra ter 0 dropouts, pelo artigo). Se fosse uma pool de computadores confiaveis, daria pra alocar pcs para os N devices
+  com mais baixa energia
+
+- Log de quantos edge servers foram usados em cada round (eafl plus)
