@@ -310,21 +310,19 @@ class BaseStrategy(Strategy):
 
     def save_round_system_metrics(self, cids_carbon_footprint, cids_joules_consumption,
                                   num_depleted, num_expired_thresh, num_transmited_bytes, server_round):
-        # cids_joules_consumption (energia treino, energia comm)
-        print('####### Carbon footprint #######')
-        print(cids_carbon_footprint)
-        print('###### Joules consumption #######')
-        print(cids_joules_consumption)
-        total_mJ, total_ceq = 0, 0
+        # NOTE: cids_carbon_footprint esta sendo desconsiderado por enquanto
+        # se tiver que ser considerado, devemos consertar a tupla de pegada de carbono
+        # para que retorne (pegada_carbono_treino, pegada_carbono_comunicacao)
+        total_mJ = 0
         for cid in cids_joules_consumption:
-            if self.profiles[cid]['has_edge']:
+            if len(cids_joules_consumption[cid]) < 2:
+                # Caso em que o cliente nao foi selecionado
+                total_mJ += cids_joules_consumption[cid][0]
+            elif self.profiles[cid]['has_edge']:
                 total_mJ += cids_joules_consumption[cid][1]
             else:
                 total_mJ += cids_joules_consumption[cid][0]
-        for cid in cids_carbon_footprint:
-            total_ceq += cids_carbon_footprint[cid] # TODO: gotta check if carbon footprint considers different cases of use of energy (device itself training vs delegating training to edge server)
         my_results = {"total_mJ": total_mJ,
-                      "total_ceq": total_ceq,
                       "num_expired_thresh": num_expired_thresh,
                       "num_depleted": num_depleted,
                       "num_transmited_bytes": num_transmited_bytes,
