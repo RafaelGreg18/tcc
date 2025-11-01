@@ -35,31 +35,32 @@ def get_selected_cid_training_energy(client_profile, selected_cids_time, client_
     # Comm joules: Understanding Operational 5G: A First Measurement Study on Its Coverage, Performance and Energy Consumption
 
     cid_joule_consumption = {cid: 0 for cid in selected_cids_time.keys()}
-
     for cid in selected_cids_time.keys():
         ds_size = client_dataset_size[cid]
         proc_joules = client_profile[cid]["training_mJ"] * ds_size * epochs
         comm_joules = model_size * client_profile[cid]["comm_joules"] * 2  # up+down
+        comm_joules_edge = model_size * client_profile[cid]["comm_joules"] * 4  # up+down for server + edge
         idle_time = max_comm_round_time - selected_cids_time[cid]["total"]
         idle_joules = idle_time * client_profile[cid]["idle_mJ"]
         total = proc_joules + comm_joules + idle_joules
+        total_edge = comm_joules_edge + idle_joules
         if use_battery:
-            cid_joule_consumption[cid] = min(total, client_profile[cid]["current_battery_mJ"])
+            cid_joule_consumption[cid] = (min(total, client_profile[cid]["current_battery_mJ"]), min(total_edge, client_profile[cid]["current_battery_mJ"]))
         else:
-            cid_joule_consumption[cid] = total
+            cid_joule_consumption[cid] = (total, total_edge)
 
     return cid_joule_consumption
 
-
 def get_cid_training_carbon_footprint(client_profile, selected_cids_joules_consumption):
     cid_carbon_footprint = {cid: 0 for cid in selected_cids_joules_consumption.keys()}
-
+    
     for cid in selected_cids_joules_consumption.keys():
         # Converta X (mJ) para kWh usando kWh=3,6MJ=3,6×10^6J
         # Pegada (gCO₂e) = energia (kWh) × intensidade carbônica Z (gCO₂e/kWh)
         # — esta é a fórmula padrão “atividade × fator de emissão”.
+        ## TODO: incluir caso do footprint pra quando for usar energia so de comunicacao
         carbon_footprint = client_profile[cid]["device_carbon_intensity"] * (
-                    selected_cids_joules_consumption[cid] / (3.6 * (10 ** 9)))  # J -> kWh
+                    selected_cids_joules_consumption[cid][0] / (3.6 * (10 ** 9)))  # J -> kWh
         cid_carbon_footprint[cid] = carbon_footprint
 
     return cid_carbon_footprint
@@ -73,8 +74,8 @@ def get_unselected_cid_consumption(client_profile, unselected_cids, elapsed_time
             "idle_mJ"]  # converter perfil de bateria para mJ e atualizar códigos anteriores.
 
         if use_battery:
-            cid_joule_consumption[cid] = min(idle_joules, client_profile[cid]["current_battery_mJ"])
+            cid_joule_consumption[cid] = (min(idle_joules, client_profile[cid]["current_battery_mJ"]),)
         else:
-            cid_joule_consumption[cid] = idle_joules
+            cid_joule_consumption[cid] = (idle_joules,)
 
     return cid_joule_consumption

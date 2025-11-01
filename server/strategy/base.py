@@ -169,6 +169,7 @@ class BaseStrategy(Strategy):
     ) -> tuple[Optional[Parameters], dict[str, Scalar]]:
         """Aggregate fit results using weighted average."""
         if server_round > 1:
+            # get_selected_cid_communication_energy, get_unselected_cid_communication_energy
             (cids_joules_consumption, cids_carbon_footprint, selected_cids_training_time,
              selected_cids_training_joules_consumption, selected_cids_training_carbon_footprint,
              unselected_cids_training_joules_consumption, unselected_cids_training_carbon_footprint,
@@ -225,15 +226,15 @@ class BaseStrategy(Strategy):
         for cid in selected_cids_training_time:
             self.profiles[cid]["comm_round_time"] = selected_cids_training_time[cid]["total"]
 
+        # retorna uma tupla (energia de treino, energia de comunicacao) -> (treino + 2*comm + idle, 4*comm + idle)
         selected_cids_training_joules_consumption = get_selected_cid_training_energy(self.profiles,
                                                                                      selected_cids_training_time,
                                                                                      selected_cids_training_dataset_size,
                                                                                      model_size, epochs,
                                                                                      max_comm_round_time,
                                                                                      self.use_battery)
-
         for cid in selected_cids_training_joules_consumption:
-            self.profiles[cid]["comm_round_energy"] = selected_cids_training_joules_consumption[cid]
+            self.profiles[cid]["comm_round_energy"] = selected_cids_training_joules_consumption[cid][0]
 
         selected_cids_training_carbon_footprint = get_cid_training_carbon_footprint(self.profiles,
                                                                                     selected_cids_training_joules_consumption)
@@ -267,7 +268,10 @@ class BaseStrategy(Strategy):
     def update_cids_current_battery(self, cids_joules_consumption):
         for cid in cids_joules_consumption.keys():
             cid_joules_consumption = cids_joules_consumption[cid]
-            self.profiles[cid]["current_battery_mJ"] -= cid_joules_consumption
+            if self.profiles[cid]["current_battery_mJ"] < self.context.run_config["battery-threshold"] and self.profiles[cid]['has_edge']:
+                self.profiles[cid]["current_battery_mJ"] -= cid_joules_consumption[1]
+            else:
+                self.profiles[cid]["current_battery_mJ"] -= cid_joules_consumption[0]
             if self.profiles[cid]["current_battery_mJ"] < 0:
                 self.profiles[cid]["current_battery_mJ"] = 0
 
@@ -279,7 +283,7 @@ class BaseStrategy(Strategy):
                 to_remove.append(idx)
         to_aggregate = []
         for idx, result in enumerate(results):
-            if idx not in to_remove:
+            if idx not in to_remove: 
                 to_aggregate.append(result)
         return to_aggregate
 
@@ -306,8 +310,19 @@ class BaseStrategy(Strategy):
 
     def save_round_system_metrics(self, cids_carbon_footprint, cids_joules_consumption,
                                   num_depleted, num_expired_thresh, num_transmited_bytes, server_round):
-        my_results = {"total_mJ": sum(cids_joules_consumption.values()),
-                      "total_ceq": sum(cids_carbon_footprint.values()),
+        # NOTE: cids_carbon_footprint esta sendo desconsiderado por enquanto
+        # se tiver que ser considerado, devemos consertar a tupla de pegada de carbono
+        # para que retorne (pegada_carbono_treino, pegada_carbono_comunicacao)
+        total_mJ = 0
+        for cid in cids_joules_consumption:
+            if len(cids_joules_consumption[cid]) < 2:
+                # Caso em que o cliente nao foi selecionado
+                total_mJ += cids_joules_consumption[cid][0]
+            elif self.profiles[cid]['has_edge']:
+                total_mJ += cids_joules_consumption[cid][1]
+            else:
+                total_mJ += cids_joules_consumption[cid][0]
+        my_results = {"total_mJ": total_mJ,
                       "num_expired_thresh": num_expired_thresh,
                       "num_depleted": num_depleted,
                       "num_transmited_bytes": num_transmited_bytes,
